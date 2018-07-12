@@ -1,0 +1,10 @@
+
+Turn SVGs into KiCAD modules.
+
+Known issues/caveats:
+
+- Affine transformations have not been tested thoroughly.
+- SVG path arcs are not supported yet, luckily SVG does not use them when editing paths,
+  and converts them to cubic splines when you edit a path.
+- Make sure the view port (in document->properties) is in mm.
+
