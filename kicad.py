@@ -1,7 +1,7 @@
 # (c) 2018 Erik Bosman
 # License: https://opensource.org/licenses/MIT
 
-import svgpath, simplefy
+import svgpath, simplefy, sys
 
 mapping = {
 
@@ -86,7 +86,14 @@ def print_module(f, name, fill_paths, segment_paths, pads, vias, holes):
         polygons = simplefy.weakly_simplefy(polygons)
 
         for p in polygons:
-            print_polygon(f, p, mapping[layer])
+            if p[0] != p[-1]:
+                p = p + [p[0]]
+                print("warning polygon not closed ", file=sys.stderr)
+            if len(p) > 3:
+                print_polygon(f, p, mapping[layer])
+                print("polygon ", p, file=sys.stderr)
+            else:
+                print("polygon to small, ingoring, ", p, file=sys.stderr)
 
     for layer, polygons, width in segment_paths:
         polygons = svgpath.rescale_polygon_list(polygons, scale, roundint)
