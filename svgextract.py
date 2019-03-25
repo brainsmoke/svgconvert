@@ -3,9 +3,11 @@
 # License: https://opensource.org/licenses/MIT
 
 import xml.etree.ElementTree as ET
-import math, cmath
+import math, cmath, itertools
 
 import svgpath
+
+import sys
 
 fab_layers = [
     "front_mask",
@@ -113,14 +115,13 @@ def parse_transform(s):
             raise "meh."
 
     m = [1., 0., 0., 1., 0., 0.]
-    transforms.reverse()
     for t in transforms:
-        m = mmul(t, m)
+        m = mmul(m, t)
 
     return m
 
 def apply_transform(t, polygon):
-    return [ (t[0]*x+t[2]*y,t[1]*x+t[3]*y) for x,y in polygon]
+    return [ (t[0]*x+t[2]*y+t[4],t[1]*x+t[3]*y+t[5]) for x,y in polygon]
 
 def magnitude(t):
     return math.sqrt( (t[0]+t[2])**2 + (t[1]+t[3])**2 )
@@ -129,7 +130,8 @@ def get_transform(e, parent_map):
     m =  parse_transform(e.get('transform', ''))
     while e in parent_map:
         e = parent_map[e]
-        m = mmul(m, parse_transform(e.get('transform', '')))
+        #m = mmul(m, parse_transform(e.get('transform', '')))
+        m = mmul(parse_transform(e.get('transform', '')),m)
 
     return m
 
@@ -152,15 +154,17 @@ def extract_pcb_data(f):
                 style_elems = parse_style(e.get("style"))
                 transform = get_transform(e, parent_map)
                 polygons = [apply_transform(transform, p) for p in svgpath.path_to_polygons(d) ]
-                if 'fill' in style_elems and style_elems['fill'] != 'none':
+                if 'fill' in style_elems and style_elems['fill'] != 'none' and name != 'edges':
                     paths.append( (name, polygons) )
-                if 'stroke' in style_elems and style_elems['stroke'] != 'none':
+                if ('stroke' in style_elems and style_elems['stroke'] != 'none') or name == 'edges':
                     width = float(style_elems['stroke-width'])*magnitude(transform)
                     segments.append( (name, polygons, width) )
         namesplit = name.split(':')
         if len(namesplit) == 3 and namesplit[0] == 'pads':
             size, drill = float(namesplit[1]), float(namesplit[2])
-            for e in layer.findall(".//{http://www.w3.org/2000/svg}circle"):
+            for e in itertools.chain(
+					layer.findall(".//{http://www.w3.org/2000/svg}circle"),
+					layer.findall(".//{http://www.w3.org/2000/svg}ellipse")):
                 x = float(e.get("cx"))
                 y = float(e.get("cy"))
                 transform = get_transform(e, parent_map)
@@ -169,16 +173,21 @@ def extract_pcb_data(f):
 
         if len(namesplit) == 3 and namesplit[0] == 'vias':
             size, drill = float(namesplit[1]), float(namesplit[2])
-            for e in layer.findall(".//{http://www.w3.org/2000/svg}circle"):
+            for e in itertools.chain(
+					layer.findall(".//{http://www.w3.org/2000/svg}circle"),
+					layer.findall(".//{http://www.w3.org/2000/svg}ellipse")):
                 x = float(e.get("cx"))
                 y = float(e.get("cy"))
                 transform = get_transform(e, parent_map)
+                print(x, y, transform, file=sys.stderr)
                 x, y = apply_transform(transform, [(x,y)])[0]
                 vias.append( (x, y, size, drill) )
 
         if len(namesplit) == 2 and namesplit[0] == 'holes':
             drill = float(namesplit[1])
-            for e in layer.findall(".//{http://www.w3.org/2000/svg}circle"):
+            for e in itertools.chain(
+					layer.findall(".//{http://www.w3.org/2000/svg}circle"),
+					layer.findall(".//{http://www.w3.org/2000/svg}ellipse")):
                 x = float(e.get("cx"))
                 y = float(e.get("cy"))
                 transform = get_transform(e, parent_map)
