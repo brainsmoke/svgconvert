@@ -1,10 +1,50 @@
 
 Turn SVGs into KiCAD modules.
 
-Known issues/caveats:
+A brief summary of files and their purpose:
+
+kicad.py - export to kicad file format
+simplefy.py - clever maths for shapes/paths
+svgextract.py - extracts info from svg
+svgpath.py - path detection
+svgtokicadmod.py - program to create a module
+svgtokicadzone.py - program to create a kicad zone
+test.svg - example svg
+
+#To run and create a kicad module using the example svg:
+
+`mkdir test.pretty`
+`./svgtokicadmod < test.svg > test.pretty/test.kicad_mod`
+
+To view/add module in kicad:
+
+Tools->Edit PCB Footprints. In the new Footprint Editor window, Preferences->Manage Footprint Libraries. Hit the
++'Browse Libraries' button, then choose the directory where the library lives. Now goto PCB Layout Editor and
++select Add Footprints button, select the footprint and add away.
+
+#Creating a new SVG
+
+The SVG converter works by looking at layers in the SVG and using the layer name to map to the corresponding
++layer name in Kicad. The names of the layers must be as follows, with the corresponding Kicad names listed next
++to them. Please check kicad.py for more accurate info:
+
+    "front_mask"   : "F.Mask",
+    "front_silk"   : "F.SilkS",
+    "front_paste"  : "F.Paste",
+    "front_copper" : "F.Cu",
+
+    "back_mask"    : "B.Mask",
+    "back_silk"    : "B.SilkS",
+    "back_copper"  : "B.Cu",
+    "back_paste"   : "B.Paste",
+
+    "edges"        : "Edge.Cuts",
+
+#Known issues/caveats:
 
 - Affine transformations have not been tested thoroughly.
 - SVG path arcs are not supported yet, luckily SVG does not use them when editing paths,
   and converts them to cubic splines when you edit a path.
-- Make sure the view port (in document->properties) is in mm.
+- When creating an svg in Inkscape, make sure the view port (in document->properties) is in mm.
+- Paths must be simple paths - eg no overlapping polygons-with-holes
 
