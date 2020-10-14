@@ -72,10 +72,11 @@ def parse_transform(s):
 
             elif t == 'translate':
                 if len(arglist) not in (1,2):
-                    x, y = float(arglist[0]), 0.
-                    if len(arglist) == 2:
-                        y = float(arglist[1])
-                    transforms.append( [1, 0, 0, 1, x, y] )
+                    break
+                x, y = float(arglist[0]), 0.
+                if len(arglist) == 2:
+                    y = float(arglist[1])
+                transforms.append( [1, 0, 0, 1, x, y] )
 
             elif t == 'scale':
                 if not 1 <= len(arg) <= 2:
@@ -135,7 +136,7 @@ def get_transform(e, parent_map):
 
     return m
 
-def extract_pcb_data(f):
+def extract_pcb_data(f, parent_layer=None):
 
     tree = ET.parse(f)
     segments = []
@@ -148,6 +149,9 @@ def extract_pcb_data(f):
 
     for layer in tree.findall(".//*[@{http://www.inkscape.org/namespaces/inkscape}groupmode='layer']"):
         name = layer.get('{http://www.inkscape.org/namespaces/inkscape}label')
+        if parent_map[layer].get('{http://www.inkscape.org/namespaces/inkscape}label', default=None) != parent_layer:
+            continue
+        print("Layer: ",name, file=sys.stderr)
         if name in fab_layers:
             for e in layer.findall(".//{http://www.w3.org/2000/svg}path"):
                 d = e.get("d")
@@ -179,7 +183,6 @@ def extract_pcb_data(f):
                 x = float(e.get("cx"))
                 y = float(e.get("cy"))
                 transform = get_transform(e, parent_map)
-                print(x, y, transform, file=sys.stderr)
                 x, y = apply_transform(transform, [(x,y)])[0]
                 vias.append( (x, y, size, drill) )
 

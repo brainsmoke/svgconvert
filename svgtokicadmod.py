@@ -2,7 +2,7 @@
 # (c) 2018 Erik Bosman
 # License: https://opensource.org/licenses/MIT
 #
-# Usage: python3 svgtokicadmod.py < file.svg > my_footprints.pretty/file.kicad_mod
+# Usage: python3 svgtokicadmod.py [--layer <layername>] file.svg > my_footprints.pretty/file.kicad_mod
 #
 # Layer names:
 #
@@ -23,5 +23,12 @@ import sys
 
 import svgextract, kicad
 
-(paths, segments, pads, vias, holes) = svgextract.extract_pcb_data(sys.stdin)
-kicad.print_module(sys.stdout, "module", paths, segments, pads, vias, holes)
+if __name__ == '__main__':
+    import argparse
+
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--layer", help="extract module from sublayers of a specific layer", type=str)
+    args = parser.parse_args()
+
+    (paths, segments, pads, vias, holes) = svgextract.extract_pcb_data(sys.stdin, args.layer)
+    kicad.print_module(sys.stdout, "module", paths, segments, pads, vias, holes)
