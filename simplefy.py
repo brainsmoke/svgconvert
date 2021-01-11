@@ -3,10 +3,18 @@
 
 import sys, math, itertools
 
+import kdtree
+
 def dist(a, b):
     ax, ay = a
     bx, by = b
     return math.sqrt((ax-bx)**2 + (ay-by)**2)
+
+def dist_square(a, b):
+    ax, ay = a
+    bx, by = b
+    x, y = bx-ax, by-ay
+    return x*x+y*y
 
 def cross_product(a, b, c):
     ax, ay = a
@@ -26,7 +34,7 @@ def counter_clockwise(a, b, c):
 def intersect(l1, l2):
     a, b = l1
     c, d = l2
-    return ( counter_clockwise(a,c,d) != counter_clockwise(b,c,d) and 
+    return ( counter_clockwise(a,c,d) != counter_clockwise(b,c,d) and
              counter_clockwise(a,b,c) != counter_clockwise(a,b,d) )
 
 def interpolate(pos1, pos2, d):
@@ -87,12 +95,16 @@ def polygon_crossproduct_sum(poly):
     return total
 
 def remove_subsubsets(subsets):
+    new_subsets = {}
     sets = list(subsets.keys())
     for s_a in sets:
-        for s_b in sets:
-            for s_c in sets:
-                if s_a in subsets[s_b] and s_b in subsets[s_c] and s_a in subsets[s_c]:
-                    subsets[s_c].remove(s_a)
+        new_list = list(subsets[s_a])
+        for s_b in subsets[s_a]:
+            for s_c in subsets[s_b]:
+                if s_c in new_list:
+                    new_list.remove(s_c)
+        new_subsets[s_a] = new_list
+    return new_subsets
 
 def nest_depth(parentset, key):
     if parentset[key] == []:
@@ -124,8 +136,8 @@ def get_cutout_mapping(polygon_list):
                         parents[a].append(b)
                         children[b].append(a)
 
-    remove_subsubsets(parents)
-    remove_subsubsets(children)
+    parents=remove_subsubsets(parents)
+    children=remove_subsubsets(children)
 
     for p in list(children.keys()):
         if nest_depth(parents, p) & 1 == 1:
@@ -145,24 +157,28 @@ def counter_clockwise(polygons):
             polygon.reverse()
     return polygons
 
+#def no_intersect(pa, pb):
+#    ax, ay, ai, polygon_a = pa
+#    bx, by, bi, polygon_b = pb
+
 def weakly_simplefy_polygon(polygon, cutouts):
     for c in cutouts:
         c.reverse()
     while len(cutouts) > 0:
-        distlist = [ (dist(pp, cp), pn, cn, c) for pn,pp in enumerate(polygon[:-1]) for c in cutouts for cn,cp in enumerate(c[:-1]) ]
-        distlist.sort(key=lambda x: x[0])
-        sys.stderr.write( str(len(distlist)) + '\n' )
-        for _, pn, cn, c in distlist:
-            line1 = (polygon[pn], c[cn])
+        kdtree.c=0
+        sys.stderr.write( 'todo:'+str(len(cutouts)) + '\n' )
+        tree = kdtree.KDTree( [ (x, y, i) for i,(x,y) in enumerate(polygon[:-1]) ] )
+        c_best, best, limit, c_best_n = None, None, None, None
+        for c in cutouts:
+            for i,(x,y) in enumerate(c[:-1]):
+                n_best, n_limit = tree.find_nearest( (x,y,c,i), limit)
+                if best == None or limit > n_limit:
+                    c_best, c_best_n, best, limit = c, i, n_best, n_limit
 
-            for line2 in itertools.chain( zip(p[:-1], p[1:]) for p in [polygon]+cutouts ):
-                if polygon[pn] not in line1 and intersect(line1, line2):
-                    break
-            else:
-                sys.stderr.write( str(polygon[pn]) + ' '+ str(c[cn]) + str(_) + '\n')
-                polygon[pn:pn] = [polygon[pn]] + c[cn:-1] + c[:cn+1] 
-                cutouts.remove(c)
-                break
+        pn = best[2]
+        sys.stderr.write( str(kdtree.c)+' '+ str(polygon[pn]) + ' '+ str(c_best[c_best_n]) + '\n')
+        polygon[pn:pn] = [polygon[pn]] + c_best[c_best_n:-1] + c_best[:c_best_n+1]
+        cutouts.remove(c_best)
     return polygon
 
 def weakly_simplefy(polygons):
