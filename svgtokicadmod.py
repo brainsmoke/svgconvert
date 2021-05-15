@@ -30,5 +30,5 @@ if __name__ == '__main__':
     parser.add_argument("--layer", help="extract module from sublayers of a specific layer", type=str)
     args = parser.parse_args()
 
-    (paths, segments, pads, vias, holes) = svgextract.extract_pcb_data(sys.stdin, args.layer)
-    kicad.print_module(sys.stdout, "module", paths, segments, pads, vias, holes)
+    (paths, segments, pads, vias, holes, slots) = svgextract.extract_pcb_data(sys.stdin, args.layer)
+    kicad.print_module(sys.stdout, "module", paths, segments, pads, vias, holes, slots)

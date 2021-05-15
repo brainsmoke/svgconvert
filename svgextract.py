@@ -144,6 +144,7 @@ def extract_pcb_data(f, parent_layer=None):
     pads = []
     vias = []
     holes = []
+    slots = []
 
     parent_map = { c:p for p in tree.iter() for c in p }
 
@@ -197,7 +198,18 @@ def extract_pcb_data(f, parent_layer=None):
                 x, y = apply_transform(transform, [(x,y)])[0]
                 holes.append( (x, y, drill) )
 
-    return (paths, segments, pads, vias, holes)
+        if len(namesplit) == 3 and namesplit[0] == 'slots':
+            copper_width = float(namesplit[1])
+            drill_width = float(namesplit[2])
+            for e in layer.findall(".//{http://www.w3.org/2000/svg}path"):
+                d = e.get("d")
+                style_elems = parse_style(e.get("style"))
+                transform = get_transform(e, parent_map)
+                polygons = [apply_transform(transform, p) for p in svgpath.path_to_polygons(d) ]
+                if ('stroke' in style_elems and style_elems['stroke'] != 'none') or name == 'edges':
+                    slots.append( (polygons, copper_width, drill_width) )
+
+    return (paths, segments, pads, vias, holes, slots)
 
 def extract_pcb_zone(f, zonename):
 
