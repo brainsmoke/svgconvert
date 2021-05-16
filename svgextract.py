@@ -136,7 +136,7 @@ def get_transform(e, parent_map):
 
     return m
 
-def extract_pcb_data(f, parent_layer=None):
+def extract_pcb_data(f, parent_layer=None, edges_as_segments=True):
 
     tree = ET.parse(f)
     segments = []
@@ -159,17 +159,23 @@ def extract_pcb_data(f, parent_layer=None):
                 style_elems = parse_style(e.get("style"))
                 transform = get_transform(e, parent_map)
                 polygons = [apply_transform(transform, p) for p in svgpath.path_to_polygons(d) ]
-                if 'fill' in style_elems and style_elems['fill'] != 'none' and name != 'edges':
+                if name == 'edges':
+                    is_poly = not edges_as_segments
+                else:
+                    is_poly = ( 'fill' in style_elems and style_elems['fill'] != 'none' )
+
+                if is_poly:
                     paths.append( (name, polygons) )
-                if ('stroke' in style_elems and style_elems['stroke'] != 'none') or name == 'edges':
+                else: # if 'stroke' in style_elems and style_elems['stroke'] != 'none':
                     width = float(style_elems['stroke-width'])*magnitude(transform)
                     segments.append( (name, polygons, width) )
+
         namesplit = name.split(':')
         if len(namesplit) == 3 and namesplit[0] == 'pads':
             size, drill = float(namesplit[1]), float(namesplit[2])
             for e in itertools.chain(
-					layer.findall(".//{http://www.w3.org/2000/svg}circle"),
-					layer.findall(".//{http://www.w3.org/2000/svg}ellipse")):
+                    layer.findall(".//{http://www.w3.org/2000/svg}circle"),
+                    layer.findall(".//{http://www.w3.org/2000/svg}ellipse")):
                 x = float(e.get("cx"))
                 y = float(e.get("cy"))
                 transform = get_transform(e, parent_map)
@@ -179,8 +185,8 @@ def extract_pcb_data(f, parent_layer=None):
         if len(namesplit) == 3 and namesplit[0] == 'vias':
             size, drill = float(namesplit[1]), float(namesplit[2])
             for e in itertools.chain(
-					layer.findall(".//{http://www.w3.org/2000/svg}circle"),
-					layer.findall(".//{http://www.w3.org/2000/svg}ellipse")):
+                    layer.findall(".//{http://www.w3.org/2000/svg}circle"),
+                    layer.findall(".//{http://www.w3.org/2000/svg}ellipse")):
                 x = float(e.get("cx"))
                 y = float(e.get("cy"))
                 transform = get_transform(e, parent_map)
@@ -190,8 +196,8 @@ def extract_pcb_data(f, parent_layer=None):
         if len(namesplit) == 2 and namesplit[0] == 'holes':
             drill = float(namesplit[1])
             for e in itertools.chain(
-					layer.findall(".//{http://www.w3.org/2000/svg}circle"),
-					layer.findall(".//{http://www.w3.org/2000/svg}ellipse")):
+                    layer.findall(".//{http://www.w3.org/2000/svg}circle"),
+                    layer.findall(".//{http://www.w3.org/2000/svg}ellipse")):
                 x = float(e.get("cx"))
                 y = float(e.get("cy"))
                 transform = get_transform(e, parent_map)

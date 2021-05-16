@@ -199,3 +199,14 @@ def weakly_simplefy(polygons):
 #            
 #    return polygons
 
+def separate_cutouts(polygons):
+    polygons = close_polygons(polygons)
+    polygons = counter_clockwise(polygons)
+    # slow
+    mapping = get_cutout_mapping(polygons)
+    mapping_keys = list(mapping.keys())
+    mapping_keys.sort()
+    sys.stderr.write(str(mapping)+'\n')
+    # slow as hell
+    return [ { 'outline' : polygons[num], 'cutouts' : [polygons[x] for x in mapping[num]] } for num in mapping_keys ]
+#
