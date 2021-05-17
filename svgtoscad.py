@@ -22,6 +22,9 @@
 import sys
 
 import svgextract, scad
+import svgpath
+#svgpath.cubic_sections = 16
+svgpath.cubic_sections = 8
 
 if __name__ == '__main__':
     import argparse

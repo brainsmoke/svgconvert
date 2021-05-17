@@ -46,11 +46,8 @@ def print_slot(f, a, b, size, drill):
     copper_size = ( d(a,b)+size, size )
     print("// slot at {:s} rotated {:s} degrees size {:s} drill {:s}".format(coord_fmt(pos), phase_fmt(rotate), coord_fmt(copper_size), coord_fmt(drill_size)), file=f)
 
-def print_via(f, coords, size, drill):
-    print("// via at {:s} size {:s} drill {:s}".format(coord_fmt(coords), coord_fmt((size,size)), num_fmt(drill)), file=f)
-
-def print_hole(f, coords, drill):
-    print("// hole {:s} size {:s}".format(coord_fmt(coords), num_fmt(drill)), file=f)
+def print_circle(f, coords, drill):
+    print("\t\ttranslate({:s}) circle(r={:s});".format(coord_fmt(coords), num_fmt(drill/2)), file=f)
 
 def print_polygon(f, polygon, layer):
     points = polygon['outline']
@@ -62,9 +59,6 @@ def print_polygon(f, polygon, layer):
 
 def print_segments(f, polygon, layer, width):
     print('\t\t' + ','.join(coord_fmt(p) for p in polygon), file=f)
-
-def print_zone(f, polygon):
-    print('\n'.join('(xy '+coord_fmt(point)+')' for point in polygon), file=f)
 
 def roundint(x):
     return int(round(x))
@@ -96,7 +90,7 @@ def print_module(f, name, fill_paths, segment_paths, pads, vias, holes, slots):
         print("\t{", file=f)
 
         for polygons in (p for l,p in fill_paths if layer == l):
-            polygons = svgpath.rescale_polygon_list(polygons, scale, roundint)
+            polygons = svgpath.rescale_polygon_list(polygons, scale, flipY=True, conv=roundint)
             polygons = simplefy.separate_cutouts(polygons)
             for p in polygons:
                 print (layer,file = sys.stderr)
@@ -108,7 +102,7 @@ def print_module(f, name, fill_paths, segment_paths, pads, vias, holes, slots):
 
 #        for polygons, width in (p,w for l,p,w segment_paths if layer == l):
 #            print("layer_"+layer+"_segments = [\n\t[", file=f)
-#            polygons = svgpath.rescale_polygon_list(polygons, scale, roundint)
+#            polygons = svgpath.rescale_polygon_list(polygons, scale, flipY=True, conv=roundint)
 #            first=True
 #            for p in polygons:
 #                if not first:
@@ -119,29 +113,46 @@ def print_module(f, name, fill_paths, segment_paths, pads, vias, holes, slots):
 #            print("];", file=f)
 #            print(file=f)
 
+    print("module {}_holes()".format(name, layer), file=f)
+    print("{", file=f)
+    print("\tunion()", file=f)
+    print("\t{", file=f)
+
     for x, y, size, drill in pads:
-        print("// layer '"+layer+"' pads", file=f)
-        print_pad(f, svgpath.rescale_point((x,y), scale, roundint), scale*size, scale*drill)
+        print("// pads", file=f)
+        print_circle(f, svgpath.rescale_point((x,y), scale, flipY=True, conv=roundint), scale*drill)
 
     for x, y, size, drill in vias:
-        print("// layer '"+layer+"' vias", file=f)
-        print_via(f, svgpath.rescale_point((x,y), scale, roundint), scale*size, scale*drill)
+        print("// vias", file=f)
+        print_circle(f, svgpath.rescale_point((x,y), scale, flipY=True, conv=roundint), scale*drill)
 
     for x, y, drill in holes:
-        print("// layer '"+layer+"' holes", file=f)
-        print_hole(f, svgpath.rescale_point((x,y), scale, roundint), scale*drill)
+        print("// holes", file=f)
+        print_circle(f, svgpath.rescale_point((x,y), scale, flipY=True, conv=roundint), scale*drill)
+
+    print("\t};", file=f)
+    print("};", file=f)
+
+
+    print("module {}_rings()".format(name, layer), file=f)
+    print("{", file=f)
+    print("\tunion()", file=f)
+    print("\t{", file=f)
+
+    for x, y, size, drill in pads:
+        print("// pads", file=f)
+        print_circle(f, svgpath.rescale_point((x,y), scale, flipY=True, conv=roundint), scale*size)
+
+    for x, y, size, drill in vias:
+        print("// vias", file=f)
+        print_circle(f, svgpath.rescale_point((x,y), scale, flipY=True, conv=roundint), scale*size)
+
+    print("\t};", file=f)
+    print("};", file=f)
 
     for polygons, size, drill in slots:
-        polygons = svgpath.rescale_polygon_list(polygons, scale, roundint)
+        polygons = svgpath.rescale_polygon_list(polygons, scale, flipY=True, conv=roundint)
         for p in polygons:
             for a, b in zip(p[:-1], p[1:]):
                 print_slot(f, a, b, size*scale, drill*scale)
-
-def print_zones(f, zone_paths):
-
-    for polygons in zone_paths:
-        polygons = svgpath.rescale_polygon_list(polygons, scale, roundint)
-        polygons = simplefy.weakly_simplefy(polygons)
-        for p in polygons:
-            print_zone(f, p)
 

@@ -109,7 +109,7 @@ def print_module(f, name, fill_paths, segment_paths, pads, vias, holes, slots):
 
     for layer, polygons in fill_paths:
         print("Layer: ", layer, file=sys.stderr)
-        polygons = svgpath.rescale_polygon_list(polygons, scale, roundint)
+        polygons = svgpath.rescale_polygon_list(polygons, scale, conv=roundint)
         polygons = simplefy.weakly_simplefy(polygons)
 
         for p in polygons:
@@ -123,21 +123,21 @@ def print_module(f, name, fill_paths, segment_paths, pads, vias, holes, slots):
                 print("polygon to small, ingoring, ", p, file=sys.stderr)
 
     for layer, polygons, width in segment_paths:
-        polygons = svgpath.rescale_polygon_list(polygons, scale, roundint)
+        polygons = svgpath.rescale_polygon_list(polygons, scale, conv=roundint)
         for p in polygons:
             print_segments(f, p, mapping[layer], width*scale)
 
     for x, y, size, drill in pads:
-        print_pad(f, svgpath.rescale_point((x,y), scale, roundint), scale*size, scale*drill)
+        print_pad(f, svgpath.rescale_point((x,y), scale, conv=roundint), scale*size, scale*drill)
 
     for x, y, size, drill in vias:
-        print_via(f, svgpath.rescale_point((x,y), scale, roundint), scale*size, scale*drill)
+        print_via(f, svgpath.rescale_point((x,y), scale, conv=roundint), scale*size, scale*drill)
 
     for x, y, drill in holes:
-        print_hole(f, svgpath.rescale_point((x,y), scale, roundint), scale*drill)
+        print_hole(f, svgpath.rescale_point((x,y), scale, conv=roundint), scale*drill)
 
     for polygons, size, drill in slots:
-        polygons = svgpath.rescale_polygon_list(polygons, scale, roundint)
+        polygons = svgpath.rescale_polygon_list(polygons, scale, conv=roundint)
         for p in polygons:
             for a, b in zip(p[:-1], p[1:]):
                 print_slot(f, a, b, size*scale, drill*scale)
@@ -147,7 +147,7 @@ def print_module(f, name, fill_paths, segment_paths, pads, vias, holes, slots):
 def print_zones(f, zone_paths):
 
     for polygons in zone_paths:
-        polygons = svgpath.rescale_polygon_list(polygons, scale, roundint)
+        polygons = svgpath.rescale_polygon_list(polygons, scale, conv=roundint)
         polygons = simplefy.weakly_simplefy(polygons)
         for p in polygons:
             print_zone(f, p)

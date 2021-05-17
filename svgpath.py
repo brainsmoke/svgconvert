@@ -221,36 +221,46 @@ def path_to_polygons(data, scale=1.):
 
     return polygons
 
-def rescale_point(p, scale, conv=lambda x: x):
+def rescale_point(p, scale, flipX=False, flipY=False, conv=lambda x: x):
     x, y = p
-    return ( conv(x*scale), conv(y*scale) )
+    f_x = 1-2*int(flipX)
+    f_y = 1-2*int(flipY)
+    return ( conv(x*scale*f_x), conv(y*scale*f_y) )
 
-def rescale_polygon(polygon, scale, conv=lambda x: x):
-    return [ rescale_point(p, scale, conv) for p in polygon ]
+def rescale_polygon(polygon, scale, flipX=False, flipY=False, conv=lambda x: x):
+    rescaled = [ rescale_point(p, scale, flipX, flipY, conv) for p in polygon ]
+    last = rescaled[-1]
+    removed_doubles = [ ]
+    for el in rescaled:
+        if el != last:
+            removed_doubles.append(el)
+            last = el
 
-def rescale_polygon_list(polygon_list, scale, conv=lambda x: x):
-    return [ rescale_polygon(polygon, scale, conv) for polygon in polygon_list ]
+    return removed_doubles
 
-def transform_point(p, scale, translate, flipX, flipY, conv):
-    x, y = p
-    dx, dy = translate
-    scaleX, scaleY = scale, scale
-    if flipX:
-        scaleX = -scaleX
-    if flipY:
-        scaleY = -scaleY
-    return ( conv(dx+(x*scaleX)), conv(dy+(y*scaleY)) ) 
+def rescale_polygon_list(polygon_list, scale, flipX=False, flipY=False, conv=lambda x: x):
+    return [ rescale_polygon(polygon, scale, flipX, flipY, conv) for polygon in polygon_list ]
 
-def transform_polygon(polygon, scale, translate, flipX, flipY, conv):
-    return [ transform_point(p, scale, translate, flipX, flipY, conv) for p in polygon ]
-
-def transform_polygon_list(polygon_list, scale, translate=(0,0), flipX=False, flipY=False, conv=lambda x: x):
-    return [ transform_polygon(polygon, scale, translate, flipX, flipY, conv) for polygon in polygon_list ]
-
-def translate_polygon(polygon_list, translate):
-    dx, dy = translate
-    return [ (x+dx, y+dy) for x, y in polygon ]
-
-def translate_polygon_list(polygon_list, translate):
-    return [ translate_polygon(polygon, translate) for polygon in polygon_list ]
-
+#def transform_point(p, scale, translate, flipX, flipY, conv):
+#    x, y = p
+#    dx, dy = translate
+#    scaleX, scaleY = scale, scale
+#    if flipX:
+#        scaleX = -scaleX
+#    if flipY:
+#        scaleY = -scaleY
+#    return ( conv(dx+(x*scaleX)), conv(dy+(y*scaleY)) )
+#
+#def transform_polygon(polygon, scale, translate, flipX, flipY, conv):
+#    return [ transform_point(p, scale, translate, flipX, flipY, conv) for p in polygon ]
+#
+#def transform_polygon_list(polygon_list, scale, translate=(0,0), flipX=False, flipY=False, conv=lambda x: x):
+#    return [ transform_polygon(polygon, scale, translate, flipX, flipY, conv) for polygon in polygon_list ]
+#
+#def translate_polygon(polygon_list, translate):
+#    dx, dy = translate
+#    return [ (x+dx, y+dy) for x, y in polygon ]
+#
+#def translate_polygon_list(polygon_list, translate):
+#    return [ translate_polygon(polygon, translate) for polygon in polygon_list ]
+#

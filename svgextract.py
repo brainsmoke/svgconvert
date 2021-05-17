@@ -136,6 +136,18 @@ def get_transform(e, parent_map):
 
     return m
 
+def find_designs(f):
+    pcbs = set()
+
+    tree = ET.parse(f)
+    parent_map = { c:p for p in tree.iter() for c in p }
+    for layer in tree.findall(".//*[@{http://www.inkscape.org/namespaces/inkscape}groupmode='layer']"):
+        name = layer.get('{http://www.inkscape.org/namespaces/inkscape}label')
+        parent = parent_map[layer].get('{http://www.inkscape.org/namespaces/inkscape}label', default=None)
+        if name in fab_layers:
+            pcbs.add(parent)
+    return pcbs
+
 def extract_pcb_data(f, parent_layer=None, edges_as_segments=True):
 
     tree = ET.parse(f)
