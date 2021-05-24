@@ -213,7 +213,7 @@ def path_to_polygons(data, scale=1.):
         if mode in 'cCsS':
             cubic_ctrl = vector_sub(pos, vector_sub(guide2, pos))
         elif mode in 'qQtT':
-            quad_ctrl = vector_sub(pos, vector_sub(guide1, pos))
+            quad_ctrl = vector_sub(pos, vector_sub(guide, pos))
 
     if len(p) > 0:
         polygons.append( p )
@@ -229,14 +229,12 @@ def rescale_point(p, scale, flipX=False, flipY=False, conv=lambda x: x):
 
 def rescale_polygon(polygon, scale, flipX=False, flipY=False, conv=lambda x: x):
     rescaled = [ rescale_point(p, scale, flipX, flipY, conv) for p in polygon ]
-    last = rescaled[-1]
-    removed_doubles = [ ]
-    for el in rescaled:
-        if el != last:
-            removed_doubles.append(el)
-            last = el
+    without_doubles = [ ]
+    for i in range(len(polygon)):
+        if rescaled[i-1] != rescaled[i] or polygon[i-1] == polygon[i]:
+            without_doubles.append(rescaled[i])
 
-    return removed_doubles
+    return without_doubles
 
 def rescale_polygon_list(polygon_list, scale, flipX=False, flipY=False, conv=lambda x: x):
     return [ rescale_polygon(polygon, scale, flipX, flipY, conv) for polygon in polygon_list ]

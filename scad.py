@@ -81,7 +81,11 @@ def str_escape(s):
 
 def print_module(f, name, fill_paths, segment_paths, pads, vias, holes, slots):
 
-    layers = set( x[0] for y in (fill_paths, segment_paths) for x in y )
+    layers = ["front_mask", "front_silk", "front_paste", "front_copper", "back_mask", "back_silk", "back_copper", "back_paste", "edges"]
+
+    for p in (fill_paths, segment_paths):
+        for x in p:
+            assert x[0] in layers
  
     for layer in layers:
         print("module {}_{}()".format(name, layer), file=f)
