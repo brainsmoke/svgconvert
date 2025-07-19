@@ -108,9 +108,12 @@ def path_to_polygons(data, scale=1.):
 
         if x[0] in 'zZ':
             pos = p[0]
-            p.append( pos )
 
         if x[0] in 'zZmM':
+            p = remove_doubles(p)
+            if x[0] in 'zZ':
+                p = p + p[:1]
+
             if len(p) > 0:
                 polygons.append( p )
                 pol_debug( p )
@@ -235,6 +238,9 @@ def rescale_polygon(polygon, scale, flipX=False, flipY=False, conv=lambda x: x):
             without_doubles.append(rescaled[i])
 
     return without_doubles
+
+def remove_doubles(p):
+    return [ pa for pa, pb in zip(p, p[1:]+p[:1]) if pa != pb ]
 
 def rescale_polygon_list(polygon_list, scale, flipX=False, flipY=False, conv=lambda x: x):
     return [ rescale_polygon(polygon, scale, flipX, flipY, conv) for polygon in polygon_list ]
